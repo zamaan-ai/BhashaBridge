@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>BhashaBridge | Voice Reliability Lab</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="mark">B</span>
+      <div>
+        <b>BhashaBridge</b>
+        <small>VOICE RELIABILITY LAB · SOVEREIGN INDIC SPEECH INTELLIGENCE</small>
+      </div>
+    </div>
+    <div class="header-badges">
+      <span class="badge gnani-badge">Powered by Gnani.ai</span>
+      <span class="status"><i></i> Ready</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">INDIC VOICE RELIABILITY LAB · v0.3.1</p>
+        <h1>Understand the voice.<br><em>Verify the meaning.</em></h1>
+        <p class="lede">A reliability-aware verification layer for code-mixed Indian speech. Powered by <b>Gnani Prisma</b> (ASR), <b>Timbre</b> (TTS), and <b>Evon</b> (Reasoning).</p>
+      </div>
+      <div class="hero-card">
+        <span>CORE RESEARCH PROBLEM</span>
+        <p>A single misheard word (e.g. <em>"nahi"</em> or <em>"mat"</em>) inverts intent with catastrophic consequences. BhashaBridge prevents this with selective verification.</p>
+        <div class="hero-metrics">
+          <div><small>MCSP (SAMPLE CSV)</small><b id="heroMcspVal">—</b></div>
+          <div><small>NEGATION RECALL</small><b id="heroNegVal">—</b></div>
+          <div><small>WER (SAMPLE CSV)</small><b id="heroWerVal">—</b></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Workspace Grid -->
+    <section class="grid">
+      <!-- Input Panel -->
+      <article class="panel input-panel">
+        <div class="panel-head">
+          <div>
+            <span class="eyebrow">01 / INPUT</span>
+            <h2>Voice Sample</h2>
+          </div>
+          <div class="input-tabs">
+            <button id="tabMic" class="tab-btn active" type="button">🎙 Live Mic</button>
+            <button id="tabUpload" class="tab-btn" type="button">📁 Upload File</button>
+          </div>
+        </div>
+
+        <!-- Mic Recording Mode -->
+        <div id="micArea" class="mic-container">
+          <div class="mic-circle" id="micBtn">
+            <span class="mic-icon">🎙</span>
+          </div>
+          <div class="mic-timer" id="micTimer">00:00</div>
+          <p class="mic-status" id="micStatus">Click microphone to start recording</p>
+          <audio id="recordedAudioPreview" controls hidden></audio>
+        </div>
+
+        <!-- File Upload Mode -->
+        <div id="uploadArea" class="upload-container" hidden>
+          <label class="drop" for="audio">
+            <span class="mic">⌁</span>
+            <b>Choose a WAV recording</b>
+            <small>Mono/stereo · PCM 8/16/24/32-bit · up to 20MB</small>
+            <input id="audio" type="file" accept=".wav,audio/wav">
+          </label>
+        </div>
+
+        <label class="field">
+          Language Condition
+          <select id="language">
+            <option value="hi-en">Hindi–English code-mix (Hinglish)</option>
+            <option value="bn-en">Bengali–English code-mix (Benglish)</option>
+            <option value="hi">Hindi (Devanagari)</option>
+            <option value="bn">Bengali (Bangla)</option>
+            <option value="en">Indian English</option>
+          </select>
+        </label>
+
+        <label class="field">
+          Optional Reference / Manual Transcript
+          <small>Allows local verification testing without using ASR API credits.</small>
+          <textarea id="transcript" rows="2" placeholder="e.g. Please transfer ₹1500 tomorrow kal subah..."></textarea>
+        </label>
+
+        <button id="analyze" type="button">Analyze Voice Sample <span>→</span></button>
+        <p class="micro">Zero audio persisted to disk. Streamed securely into memory for instant analysis.</p>
+      </article>
+
+      <!-- Analysis / Reliability Report Panel -->
+      <article class="panel results">
+        <div class="panel-head">
+          <div>
+            <span class="eyebrow">02 / AUDIT</span>
+            <h2>Reliability Report</h2>
+          </div>
+          <span id="state" class="tag">Waiting for input</span>
+        </div>
+
+        <div id="empty" class="empty">
+          <div class="wave">〰</div>
+          <b>Awaiting voice or transcript input</b>
+          <small>Record your voice or choose a test sample to evaluate acoustic quality and critical slots.</small>
+        </div>
+
+        <div id="report" hidden>
+          <div class="transcript">
+            <div class="transcript-head">
+              <span>PRISMA ASR TRANSCRIPT</span>
+              <span id="detectedLangBadge" class="lang-pill">hi-IN</span>
+            </div>
+            <p id="transcriptOut"></p>
+            <small id="provider"></small>
+          </div>
+
+          <div class="metrics">
+            <div>
+              <small>DURATION</small>
+              <b id="duration">—</b>
+            </div>
+            <div>
+              <small>RMS ENERGY</small>
+              <b id="rms">—</b>
+            </div>
+            <div>
+              <small>CLIPPING</small>
+              <b id="clip">—</b>
+            </div>
+            <div>
+              <small>SILENCE*</small>
+              <b id="silence">—</b>
+            </div>
+          </div>
+
+          <h3>Critical Semantic Slots</h3>
+          <div id="slots" class="slots"></div>
+
+          <h3>Verification Recommendation</h3>
+          <div id="decision" class="decision"></div>
+
+          <!-- Spoken Readback / Timbre Action Bar -->
+          <div class="action-bar" id="actionBar" hidden>
+            <button id="speakConfirmBtn" class="action-btn" type="button">
+              <span>🔊</span> Speak Readback (Gnani Timbre)
+            </button>
+            <button id="evonReasonBtn" class="action-btn outline" type="button">
+              <span>🧠</span> Deep Intent Audit (Gnani Evon)
+            </button>
+          </div>
+
+          <!-- Evon Reasoning Output Container -->
+          <div id="evonOutput" class="evon-box" hidden>
+            <div class="evon-head">
+              <b>Gnani Evon Sovereign Reasoning</b>
+              <span class="badge">evon-v1</span>
+            </div>
+            <p id="evonText"></p>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- Speech Output / Timbre Testing Panel -->
+    <section class="panel tts-panel">
+      <div class="panel-head">
+        <div>
+          <span class="eyebrow">03 / SPEECH GENERATION</span>
+          <h2>Gnani Timbre v3 Voice Synthesis</h2>
+        </div>
+        <span class="tag">Timbre v3 · SSE Audio</span>
+      </div>
+
+      <label class="field">
+        Text to Speak (Multilingual / Code-Mix)
+        <textarea id="ttsText" rows="2" placeholder="Enter text to synthesize…">Kripya confirm karein: Kya aap 15 May ko 500 rupaye bhejna chahte hain?</textarea>
+      </label>
+
+      <div class="tts-controls">
+        <label class="field">
+          Voice Persona
+          <select id="ttsVoice">
+            <option value="Shubham">Shubham (Indian Male - Standard)</option>
+            <option value="Avinash">Avinash (Indian Male - Deep)</option>
+            <option value="Chetana">Chetana (Indian Female - Clear)</option>
+            <option value="Riyaa">Riyaa (Indian Female - Expressive)</option>
+            <option value="Shivani">Shivani (Indian Female - Warm)</option>
+            <option value="Prakash">Prakash (Indian Male - Professional)</option>
+            <option value="Lakshmi">Lakshmi (Indian Female - Southern Accent)</option>
+          </select>
+        </label>
+        <div class="tts-btn-container">
+          <button id="synthesize" type="button">Synthesize Speech <span>→</span></button>
+        </div>
+      </div>
+      <p id="ttsState" class="micro">Synthesized audio is streamed via SSE and decoded directly in-browser.</p>
+      <audio id="ttsAudio" controls hidden></audio>
+    </section>
+
+    <!-- Benchmark Suite Panel -->
+    <section class="panel benchmark-panel">
+      <div class="panel-head">
+        <div>
+          <span class="eyebrow">04 / BENCHMARK SUITE</span>
+          <h2>Example Evaluation & Meaning-Critical Slot Preservation (MCSP)</h2>
+        </div>
+        <button id="loadBenchmarkBtn" class="pill-btn" type="button">Refresh Metrics</button>
+      </div>
+      <p class="benchmark-desc">Computed from the bundled 20-row illustrative text/slot CSV. These examples are not recorded speech or empirical user-study data.</p>
+
+      <div class="benchmark-grid">
+        <div class="benchmark-card">
+          <small>RAW ASR NEGATION RECALL</small>
+          <div class="card-val danger" id="benchNegVal">—</div>
+          <p>Exact-match negation recall in the illustrative CSV; not an acoustic robustness result.</p>
+        </div>
+        <div class="benchmark-card">
+          <small>BHASHABRIDGE MCSP</small>
+          <div class="card-val success" id="benchMcspVal">—</div>
+          <p>Exact normalized slot recall on the supplied examples; verification lift is not measured.</p>
+        </div>
+        <div class="benchmark-card">
+          <small>AVOIDED INVERSIONS</small>
+          <div class="card-val highlight" id="benchInvertVal">Not measured</div>
+          <p>Requires an instrumented end-to-end action study; not calculated by this evaluator.</p>
+        </div>
+      </div>
+
+      <div class="benchmark-table-wrap">
+        <table class="benchmark-table" id="benchmarkTable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Language</th>
+              <th>Condition</th>
+              <th>Reference Utterance</th>
+              <th>ASR Hypothesis</th>
+              <th>Policy Action</th>
+            </tr>
+          </thead>
+          <tbody id="benchmarkBody">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="bottom">
+      <div>
+        <span class="eyebrow">RESEARCH PRINCIPLE</span>
+        <h2>Measure uncertainty.<br>Never manufacture confidence.</h2>
+      </div>
+      <p>BhashaBridge explores why word error rate alone may miss meaning-critical errors. The included evaluator reports exact-match metrics on illustrative examples; real-world reliability requires evaluation on consented, recorded speech and downstream action outcomes.</p>
+    </section>
+
+    <footer>
+      <span>BhashaBridge · Indic Speech Intelligence Lab</span>
+      <span>Engineering prototype · Not a medical or financial decision system.</span>
+    </footer>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
